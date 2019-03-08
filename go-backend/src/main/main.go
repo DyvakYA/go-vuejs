@@ -1,17 +1,28 @@
 package main
 
 import (
+	"./models"
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
 )
 
+type Env struct {
+	db *sql.DB
+}
+
 func main() {
 	log.Println("Application started")
-	http.HandleFunc("/", handler);
-	http.HandleFunc("/users", users);
-	//http.HandleFunc("/", handler);
 
+	db, err := models.NewDB("root:root@tcp(localhost:3306)/godb")
+	if err != nil {
+		log.Panic(err)
+	}
+	env := &Env{db: db}
+
+	http.HandleFunc("/", handler);
+	http.Handle("/users", getUsers(env));
 	http.ListenAndServe(":8080", nil)
 }
 
@@ -20,36 +31,32 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 }
 
-type User struct {
-	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-}
+func getUsers(env *Env) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			http.Error(w, http.StatusText(405), 405)
+			return
+		}
+		users, err := models.AllUsers(env.db)
+		if err != nil {
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
 
-func users(w http.ResponseWriter, r *http.Request) {
+		js, err := json.Marshal(users)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-	var users []User
+		w.Header().Set("Server", "A Go Web Server")
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8081");
+		w.Header().Set("Access-Control-Allow-Methods", "POST,GET");
+		w.Header().Set("Access-Control-Allow-Headers", "*");
+		w.Header().Set("Access-Control-Allow-Credentials", "true");
+		w.WriteHeader(200)
 
-	user1 := User{"1", "nick", "best friend"}
-	user2 := User{"2", "bob", "best coorker"}
-	user3 := User{"3", "lois", "best partizanen"}
-	users = append(users, user1)
-	users = append(users, user2)
-	users = append(users, user3)
-
-	js, err := json.Marshal(users)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Server", "A Go Web Server")
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8081");
-	w.Header().Set("Access-Control-Allow-Methods", "POST,GET");
-	w.Header().Set("Access-Control-Allow-Headers", "*");
-	w.Header().Set("Access-Control-Allow-Credentials", "true");
-	w.WriteHeader(200)
-	//json.NewEncoder(w).Encode(user)
-	w.Write(js)
+		w.Write(js)
+	})
 }
