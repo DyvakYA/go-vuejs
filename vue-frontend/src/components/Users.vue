@@ -2,11 +2,8 @@
     <div id="users">
         <navbar></navbar>
         <h1>Users</h1>
-        <div>
-            {{ users }}
-        </div>
         <ul>
-            <li v-for="user in users" v-bind:key="user.id">{{ user }}</li>
+            <div v-for="user in users" :key="user.id">{{ user.id}} {{ user.description }}</div>
         </ul>
     </div>
 </template>
@@ -28,7 +25,7 @@
                 AXIOS.get("http://localhost:8080/users")
                     .then(response => {
                         this.users = response.data
-                        console.log(this.users);
+                        console.log(this.service);
                     }).catch(function (error) {
                     console.log(error);
                 });
