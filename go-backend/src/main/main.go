@@ -12,17 +12,22 @@ type Env struct {
 	db *sql.DB
 }
 
+// main method for starting application
 func main() {
 	log.Println("Application started")
 
+	// connect to db
 	db, err := models.NewDB("root:root@tcp(localhost:3306)/godb")
 	if err != nil {
 		log.Panic(err)
 	}
 	env := &Env{db: db}
 
+	// request handlers
 	http.HandleFunc("/", handler);
 	http.Handle("/users", getUsers(env));
+
+	// request address port
 	http.ListenAndServe(":8080", nil)
 }
 
@@ -31,6 +36,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 }
 
+// get user from db
 func getUsers(env *Env) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
@@ -43,12 +49,14 @@ func getUsers(env *Env) http.Handler {
 			return
 		}
 
+		// make json from users
 		js, err := json.Marshal(users)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
+		// make answer
 		w.Header().Set("Server", "A Go Web Server")
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8081");
@@ -57,6 +65,7 @@ func getUsers(env *Env) http.Handler {
 		w.Header().Set("Access-Control-Allow-Credentials", "true");
 		w.WriteHeader(200)
 
+		// answer
 		w.Write(js)
 	})
 }

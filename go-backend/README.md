@@ -4,12 +4,12 @@ All responses will have the form
 
 ```json
 {
-	"data": "Mixed type holding the contnt of response",
 	"message": "Description of what happened",
+	"data": "Mixed type holding the contnt of response"
 }
 ```
 
-Subsequent response definations will only detail the expected value of the `sdata field`
+Subsequent response definations will only detail the expected value of the `data field`
 
 ### List all users
 
